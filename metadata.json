@@ -1,0 +1,6 @@
+{
+  "name": "Forex Chart",
+  "description": "Real-time technical analysis, interactive candlestick charting, automated pattern recognition, and trade signal alerts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
