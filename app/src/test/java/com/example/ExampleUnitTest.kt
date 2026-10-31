@@ -36,8 +36,9 @@ class ExampleUnitTest {
     
     val signal = TechnicalAnalysisEngine.generateTradeSignal(pair, candles, Timeframe.H1)
     assertNotNull(signal)
-    assertTrue("Signal confidence should be between 0 and 100", signal.confidence in 0..100)
+    assertTrue("Signal confidence should be between 0 and 100", signal.confidenceScore in 0..100)
     assertTrue("Stop loss should be positive", signal.stopLoss > 0)
-    assertTrue("Take profit should be positive", signal.takeProfit > 0)
+    assertTrue("Take profit 1 should be positive", signal.takeProfit1 > 0)
+    assertTrue("Take profit 2 should be positive", signal.takeProfit2 > 0)
   }
 }

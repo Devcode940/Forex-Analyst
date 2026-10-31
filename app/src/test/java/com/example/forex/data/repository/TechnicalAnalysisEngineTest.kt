@@ -29,10 +29,14 @@ class TechnicalAnalysisEngineTest {
 
     @Test
     fun `RSI rises above 70 on persistent uptrend and falls below 30 on persistent downtrend`() {
-        val up = TechnicalAnalysisEngine.calculateRSI(trendSeries(60, 100.0, 0.5, 0.2).map { it.close })
+        val upCloses = trendSeries(60, 100.0, 0.5, 0.2).map { it.close }
+        val up = TechnicalAnalysisEngine.calculateRSI(upCloses)
+        assertEquals("RSI series size must exactly match input closes size", upCloses.size, up.size)
         assertTrue("last RSI should be overbought", (up.lastOrNull() ?: 0.0) > 70.0)
 
-        val down = TechnicalAnalysisEngine.calculateRSI(trendSeries(60, 130.0, -0.5, 0.2).map { it.close })
+        val downCloses = trendSeries(60, 130.0, -0.5, 0.2).map { it.close }
+        val down = TechnicalAnalysisEngine.calculateRSI(downCloses)
+        assertEquals("RSI series size must exactly match input closes size", downCloses.size, down.size)
         assertTrue("last RSI should be oversold", (down.lastOrNull() ?: 100.0) < 30.0)
     }
 

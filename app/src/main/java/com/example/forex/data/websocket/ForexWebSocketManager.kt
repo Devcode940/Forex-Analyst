@@ -62,8 +62,8 @@ class ForexWebSocketManager {
     val marketTicks: SharedFlow<MarketTick> = _marketTicks.asSharedFlow()
 
     // Latest price cache for cross-rate generation
-    private val latestPrices = mutableMapOf<String, Double>()
-    private val previousPrices = mutableMapOf<String, Double>()
+    private val latestPrices = java.util.concurrent.ConcurrentHashMap<String, Double>()
+    private val previousPrices = java.util.concurrent.ConcurrentHashMap<String, Double>()
 
     companion object {
         const val DEFAULT_WS_URL = "wss://stream.binance.com:9443/ws/!miniTicker@arr"

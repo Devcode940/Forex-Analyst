@@ -34,7 +34,7 @@ class ForexRepository(
     private val _pairs = MutableStateFlow<List<CurrencyPair>>(createInitialPairs())
     val pairs: StateFlow<List<CurrencyPair>> = _pairs.asStateFlow()
 
-    private val candleMap = mutableMapOf<Pair<String, Timeframe>, MutableList<CandleStick>>()
+    private val candleMap = java.util.concurrent.ConcurrentHashMap<Pair<String, Timeframe>, MutableList<CandleStick>>()
 
     // Real-time WebSocket Stream Manager
     val webSocketManager = ForexWebSocketManager()

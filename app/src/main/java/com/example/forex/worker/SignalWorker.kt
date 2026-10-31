@@ -14,6 +14,9 @@ import com.example.forex.data.db.CandleEntity
 import com.example.forex.data.db.ForexDao
 import com.example.forex.data.db.ForexDatabase
 import com.example.forex.data.db.SignalEntity
+import com.example.forex.data.local.HistoricalPriceDao
+import com.example.forex.data.local.toCandleSticks
+import com.example.forex.data.local.toHistoricalPriceEntities
 import com.example.forex.data.model.CurrencyPair
 import com.example.forex.data.model.IndicatorSettings
 import com.example.forex.data.model.PairCatalog
@@ -52,7 +55,9 @@ class SignalWorker(
     workerParams: WorkerParameters
 ) : CoroutineWorker(context, workerParams) {
 
-    private val dao: ForexDao = ForexDatabase.getDatabase(context).forexDao()
+    private val database: ForexDatabase = ForexDatabase.getDatabase(context)
+    private val dao: ForexDao = database.forexDao()
+    private val priceDao: HistoricalPriceDao = database.historicalPriceDao()
     private val marketProvider = RealMarketDataProvider()
     private val fcsService = ForexMarketRepositoryService()
 
@@ -161,8 +166,11 @@ class SignalWorker(
             val fetched = fetchFromNetwork(normalized, config)
             if (fetched != null) {
                 // Persist for offline analysis; keep Room bounded per symbol/timeframe.
+                val trimmed = fetched.takeLast(MAX_CANDLES_KEPT)
+                priceDao.deletePricesForPairAndTimeframe(normalized, tfName)
+                priceDao.insertPrices(trimmed.toHistoricalPriceEntities(normalized, tfName))
                 dao.deleteCandles(normalized, tfName)
-                dao.insertCandles(fetched.takeLast(MAX_CANDLES_KEPT).map {
+                dao.insertCandles(trimmed.map {
                     CandleEntity(normalized, tfName, it.timestamp, it.open, it.high, it.low, it.close, it.volume)
                 })
                 return fetched
@@ -170,6 +178,10 @@ class SignalWorker(
             // Network unavailable/exhausted — fall through to locally persisted history.
         }
 
+        val cachedPrices = priceDao.getHistoricalPrices(normalized, tfName).toCandleSticks()
+        if (cachedPrices.isNotEmpty()) {
+            return cachedPrices
+        }
         return dao.getCandles(normalized, tfName).map {
             CandleStick(it.timestamp, it.open, it.high, it.low, it.close, it.volume)
         }

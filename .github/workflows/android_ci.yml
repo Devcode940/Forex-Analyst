@@ -30,8 +30,11 @@ jobs:
 
       - name: Create .env Configuration
         run: |
-          touch .env
+          cp -n .env.example .env || touch .env
           echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
+          echo "FCS_API_KEY=${{ secrets.FCS_API_KEY }}" >> .env
+          echo "OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}" >> .env
+          echo "ALPHAVANTAGE_API_KEY=${{ secrets.ALPHAVANTAGE_API_KEY }}" >> .env
 
       - name: Run Unit Tests
         run: ./gradlew :app:testDebugUnitTest
@@ -75,8 +78,11 @@ jobs:
 
       - name: Create .env Configuration
         run: |
-          touch .env
+          cp -n .env.example .env || touch .env
           echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
+          echo "FCS_API_KEY=${{ secrets.FCS_API_KEY }}" >> .env
+          echo "OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}" >> .env
+          echo "ALPHAVANTAGE_API_KEY=${{ secrets.ALPHAVANTAGE_API_KEY }}" >> .env
 
       - name: Build Release Bundle (AAB) & APK
         env:

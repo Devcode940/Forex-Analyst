@@ -80,7 +80,7 @@ object TechnicalAnalysisEngine {
         if (closes.size <= period) return List(closes.size) { null }
         val result = ArrayList<Double?>(closes.size)
 
-        for (i in 0..period) {
+        for (i in 0 until period) {
             result.add(null)
         }
 
