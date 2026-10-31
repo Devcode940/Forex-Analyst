@@ -76,12 +76,16 @@ Output location:
 ---
 
 ### C. Secrets & API Keys
-Secrets like API keys (`GEMINI_API_KEY`, Firebase configuration) are managed via the Secrets Gradle plugin:
+Secrets like API keys (`FCS_API_KEY`, `OPENROUTER_API_KEY`, `ALPHAVANTAGE_API_KEY`, Firebase configuration) are managed via the Secrets Gradle plugin:
 1. Create a `.env` file in the root project (or copy from `.env.example`):
    ```env
-   GEMINI_API_KEY=your_gemini_api_key_here
+   FCS_API_KEY=your_fcs_api_key_here
+   OPENROUTER_API_KEY=your_openrouter_api_key_here
+   ALPHAVANTAGE_API_KEY=your_alphavantage_api_key_here
    ```
 2. For Firebase integration, place your official `google-services.json` inside the `app/` directory.
+
+> For JCode-specific instructions on building, virtual device deployment (`adb`), and GitHub push, refer to [JCODE_GUIDE.md](file:///workspace/forex-analyst/JCODE_GUIDE.md).
 
 ---
 

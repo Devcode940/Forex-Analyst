@@ -12,6 +12,7 @@ plugins {
 android {
   namespace = "com.example"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
+  buildToolsVersion = "37.0.0"
 
   defaultConfig {
     applicationId = "com.devcode.forex"
