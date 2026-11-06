@@ -32,7 +32,7 @@ import com.google.firebase.auth.FirebaseUser
 class ForexViewModel(application: Application) : AndroidViewModel(application) {
     private val db = ForexDatabase.getDatabase(application)
     val offlinePriceRepository = ForexOfflinePriceRepository(db.historicalPriceDao())
-    private val repository = ForexRepository(db.forexDao(), offlinePriceRepository)
+    private val repository = ForexRepository(db.forexDao(), offlinePriceRepository, application.applicationContext)
     private val authManager = ForexAuthManager(application.applicationContext, db.forexDao())
 
     // Offline status tracking for chart UI
