@@ -22,3 +22,7 @@ debug.keystore
 *.aab
 .jcode/
 
+
+# Local scripts containing API keys
+*.local.sh
+test_fcs.sh

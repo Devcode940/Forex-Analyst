@@ -9,6 +9,12 @@ import com.example.BuildConfig
 /**
  * Secure API Key Manager using Android Keystore and encrypted SharedPreferences.
  * Prevents hardcoded API keys and provides secure storage for sensitive credentials.
+ *
+ * Threat model note: an API key compiled into BuildConfig is trivially extractable
+ * from the APK (especially with minification disabled), so BuildConfig is treated as
+ * a *developer convenience* for local debug builds only. Release builds should ship
+ * with placeholder values in `.env` and let users supply their own keys through
+ * [saveFcsApiKey] / [saveOpenRouterApiKey], which are stored encrypted on-device.
  */
 class SecureApiKeyManager(private val context: Context) {
 
@@ -28,6 +34,18 @@ class SecureApiKeyManager(private val context: Context) {
         )
     }
 
+    private fun isPlaceholderOrUnset(key: String): Boolean =
+        key.isBlank() || key == PLACEHOLDER_KEY ||
+            key.startsWith("YOUR_") || key.endsWith("_API_KEY")
+
+    /**
+     * Returns the BuildConfig fallback key, but ONLY for debug builds. Release builds
+     * must never embed live keys in the APK; they rely on user-supplied keys stored
+     * in encrypted preferences.
+     */
+    private fun buildConfigFallback(buildConfigKey: String): String? =
+        if (BuildConfig.DEBUG && !isPlaceholderOrUnset(buildConfigKey)) buildConfigKey else null
+
     /**
      * Retrieves FCS API Key from secure storage with fallback to BuildConfig.
      * Validates that key is not a placeholder value.
@@ -35,19 +53,14 @@ class SecureApiKeyManager(private val context: Context) {
     fun getFcsApiKey(): String? {
         // First try to get from encrypted storage
         val stored = encryptedPreferences.getString(KEY_FCS_API, null)
-        if (!stored.isNullOrBlank() && stored != PLACEHOLDER_KEY) {
+        if (!stored.isNullOrBlank() && !isPlaceholderOrUnset(stored)) {
             return stored
         }
 
-        // Fallback to BuildConfig if set
-        val buildConfigKey = BuildConfig.FCS_API_KEY
-        if (buildConfigKey.isNotBlank() && buildConfigKey != PLACEHOLDER_KEY) {
-            // Save it to encrypted storage for future use
-            saveFcsApiKey(buildConfigKey)
-            return buildConfigKey
-        }
-
-        return null
+        // Debug-only fallback to BuildConfig (never in release APKs).
+        val debugKey = buildConfigFallback(BuildConfig.FCS_API_KEY) ?: return null
+        saveFcsApiKey(debugKey)
+        return debugKey
     }
 
     /**
@@ -57,19 +70,25 @@ class SecureApiKeyManager(private val context: Context) {
     fun getOpenRouterApiKey(): String? {
         // First try to get from encrypted storage
         val stored = encryptedPreferences.getString(KEY_OPENROUTER_API, null)
-        if (!stored.isNullOrBlank() && stored != PLACEHOLDER_KEY) {
+        if (!stored.isNullOrBlank() && !isPlaceholderOrUnset(stored)) {
             return stored
         }
 
-        // Fallback to BuildConfig if set
-        val buildConfigKey = BuildConfig.OPENROUTER_API_KEY
-        if (buildConfigKey.isNotBlank() && buildConfigKey != PLACEHOLDER_KEY) {
-            // Save it to encrypted storage for future use
-            saveOpenRouterApiKey(buildConfigKey)
-            return buildConfigKey
-        }
+        // Debug-only fallback to BuildConfig (never in release APKs).
+        val debugKey = buildConfigFallback(BuildConfig.OPENROUTER_API_KEY) ?: return null
+        saveOpenRouterApiKey(debugKey)
+        return debugKey
+    }
 
-        return null
+    /**
+     * Retrieves Alpha Vantage API Key from secure storage with debug-only BuildConfig fallback.
+     */
+    fun getAlphaVantageApiKey(): String? {
+        val stored = encryptedPreferences.getString(KEY_ALPHAVANTAGE_API, null)
+        if (!stored.isNullOrBlank() && !isPlaceholderOrUnset(stored)) {
+            return stored
+        }
+        return buildConfigFallback(BuildConfig.ALPHAVANTAGE_API_KEY)
     }
 
     /**
@@ -88,7 +107,7 @@ class SecureApiKeyManager(private val context: Context) {
      * Securely saves FCS API Key to encrypted SharedPreferences.
      */
     fun saveFcsApiKey(apiKey: String) {
-        if (apiKey.isNotBlank() && apiKey != PLACEHOLDER_KEY) {
+        if (!apiKey.isBlank() && !isPlaceholderOrUnset(apiKey)) {
             encryptedPreferences.edit().putString(KEY_FCS_API, apiKey).apply()
         }
     }
@@ -97,7 +116,7 @@ class SecureApiKeyManager(private val context: Context) {
      * Securely saves OpenRouter API Key to encrypted SharedPreferences.
      */
     fun saveOpenRouterApiKey(apiKey: String) {
-        if (apiKey.isNotBlank() && apiKey != PLACEHOLDER_KEY) {
+        if (!apiKey.isBlank() && !isPlaceholderOrUnset(apiKey)) {
             encryptedPreferences.edit().putString(KEY_OPENROUTER_API, apiKey).apply()
         }
     }
@@ -116,7 +135,7 @@ class SecureApiKeyManager(private val context: Context) {
      */
     fun isFcsApiConfigured(): Boolean {
         val key = getFcsApiKey()
-        return !key.isNullOrBlank() && key != PLACEHOLDER_KEY
+        return !key.isNullOrBlank() && !isPlaceholderOrUnset(key)
     }
 
     /**
@@ -124,7 +143,7 @@ class SecureApiKeyManager(private val context: Context) {
      */
     fun isOpenRouterApiConfigured(): Boolean {
         val key = getOpenRouterApiKey()
-        return !key.isNullOrBlank() && key != PLACEHOLDER_KEY
+        return !key.isNullOrBlank() && !isPlaceholderOrUnset(key)
     }
 
     /**
@@ -153,6 +172,7 @@ class SecureApiKeyManager(private val context: Context) {
         private const val KEY_FCS_API = "fcs_api_key"
         private const val KEY_OPENROUTER_API = "openrouter_api_key"
         private const val KEY_AI_MODEL = "ai_model"
+        private const val KEY_ALPHAVANTAGE_API = "alphavantage_api_key"
         private const val PLACEHOLDER_KEY = "YOUR_API_KEY_HERE"
         private const val DEFAULT_AI_MODEL = "google/gemini-2.5-flash"
 

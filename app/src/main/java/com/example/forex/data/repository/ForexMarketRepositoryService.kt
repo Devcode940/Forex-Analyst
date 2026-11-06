@@ -25,9 +25,15 @@ class ForexMarketRepositoryService(
     private val okHttpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
-        .addInterceptor(HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BASIC
-        })
+        .apply {
+            // Log request lines only in debug builds; release builds must not emit
+            // URLs (which carry the access_key query param) to logcat.
+            if (BuildConfig.DEBUG) {
+                addInterceptor(HttpLoggingInterceptor().apply {
+                    level = HttpLoggingInterceptor.Level.BASIC
+                })
+            }
+        }
         .build()
 
     private val retrofit = Retrofit.Builder()

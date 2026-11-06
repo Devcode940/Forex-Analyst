@@ -15,7 +15,7 @@ android {
   buildToolsVersion = "37.0.0"
 
   defaultConfig {
-    applicationId = "com.devcode.forex"
+    applicationId = "com.devcode.forexapp"
     minSdk = 24
     targetSdk = 36
     versionCode = 1
@@ -43,7 +43,8 @@ android {
   buildTypes {
     release {
       isCrunchPngs = false
-      isMinifyEnabled = false
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("release")
     }
@@ -94,6 +95,7 @@ dependencies {
   implementation(libs.androidx.lifecycle.viewmodel.compose)
   implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.room.ktx)
+  implementation(libs.androidx.security.crypto)
   implementation(libs.androidx.room.runtime)
   // implementation(libs.coil.compose)
   implementation(libs.converter.moshi)

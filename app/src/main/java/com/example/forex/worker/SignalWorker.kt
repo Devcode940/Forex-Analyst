@@ -12,6 +12,7 @@ import androidx.work.Data
 import androidx.work.WorkerParameters
 import com.example.forex.data.db.CandleEntity
 import com.example.forex.data.db.ForexDao
+import com.example.forex.data.security.SecureApiKeyManager
 import com.example.forex.data.db.ForexDatabase
 import com.example.forex.data.db.SignalEntity
 import com.example.forex.data.local.HistoricalPriceDao
@@ -58,8 +59,14 @@ class SignalWorker(
     private val database: ForexDatabase = ForexDatabase.getDatabase(context)
     private val dao: ForexDao = database.forexDao()
     private val priceDao: HistoricalPriceDao = database.historicalPriceDao()
-    private val marketProvider = RealMarketDataProvider()
-    private val fcsService = ForexMarketRepositoryService()
+    // Keys resolved from encrypted storage (debug-only BuildConfig fallback inside
+    // SecureApiKeyManager) instead of being baked into these objects directly.
+    private val marketProvider = RealMarketDataProvider(
+        apiKey = runCatching { SecureApiKeyManager.getInstance(context).getAlphaVantageApiKey() }.getOrNull() ?: ""
+    )
+    private val fcsService = ForexMarketRepositoryService(
+        apiKey = runCatching { SecureApiKeyManager.getInstance(context).getFcsApiKey() }.getOrNull() ?: ""
+    )
 
     override suspend fun doWork(): Result {
         val config = WorkConfig.from(inputData)

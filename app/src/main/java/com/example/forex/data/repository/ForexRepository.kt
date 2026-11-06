@@ -23,11 +23,13 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.round
 import com.example.forex.data.local.ForexOfflinePriceRepository
+import com.example.forex.data.security.SecureApiKeyManager
 import kotlin.random.Random
 
 class ForexRepository(
     private val forexDao: ForexDao,
-    val offlinePriceRepository: ForexOfflinePriceRepository? = null
+    val offlinePriceRepository: ForexOfflinePriceRepository? = null,
+    private val appContext: android.content.Context? = null
 ) {
 
     private val repoScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -42,8 +44,56 @@ class ForexRepository(
     val webSocketStatus: StateFlow<WebSocketStatus> = webSocketManager.webSocketStatus
     val marketTicks: SharedFlow<MarketTick> = webSocketManager.marketTicks
 
+    // API key providers: keys are resolved from encrypted storage (SecureApiKeyManager)
+    // with a debug-only BuildConfig fallback, so release APKs never embed live keys.
+    // Overridable via [setApiKeyProviders] for tests or custom wiring.
+    var fcsApiKeyProvider: () -> String? = {
+        secureKeyLookup(com.example.BuildConfig.FCS_API_KEY) { ctx ->
+            runCatching { SecureApiKeyManager.getInstance(ctx).getFcsApiKey() }.getOrNull()
+        }
+    }
+        private set
+    var openRouterApiKeyProvider: () -> String? = {
+        secureKeyLookup(com.example.BuildConfig.OPENROUTER_API_KEY) { ctx ->
+            runCatching { SecureApiKeyManager.getInstance(ctx).getOpenRouterApiKey() }.getOrNull()
+        }
+    }
+        private set
+    var alphaVantageApiKeyProvider: () -> String = {
+        secureKeyLookup(com.example.BuildConfig.ALPHAVANTAGE_API_KEY) { ctx ->
+            runCatching { SecureApiKeyManager.getInstance(ctx).getAlphaVantageApiKey() }.getOrNull()
+        } ?: ""
+    }
+        private set
+
+    fun setApiKeyProviders(
+        fcs: (() -> String?)? = null,
+        openRouter: (() -> String?)? = null,
+        alphaVantage: (() -> String)? = null
+    ) {
+        fcs?.let { fcsApiKeyProvider = it }
+        openRouter?.let { openRouterApiKeyProvider = it }
+        alphaVantage?.let { alphaVantageApiKeyProvider = it }
+    }
+
+    /**
+     * Resolves an API key without embedding live keys in release APKs:
+     * 1. user-supplied key from EncryptedSharedPreferences (when a context is available),
+     * 2. the BuildConfig value only in DEBUG builds,
+     * 3. otherwise null (callers degrade gracefully).
+     */
+    private fun secureKeyLookup(buildConfigKey: String, fromSecureStore: (android.content.Context) -> String?): String? {
+        appContext?.let { ctx ->
+            val stored = fromSecureStore(ctx)
+            if (!stored.isNullOrBlank()) return stored
+        }
+        return if (com.example.BuildConfig.DEBUG && buildConfigKey.isNotBlank() && !buildConfigKey.startsWith("YOUR_")) {
+            buildConfigKey
+        } else null
+    }
+
     // Real REST market data (Alpha Vantage primary, FCS fallback)
-    val realDataProvider = RealMarketDataProvider()
+    val realDataProvider = RealMarketDataProvider(apiKey = alphaVantageApiKeyProvider())
     val marketDataHealth: StateFlow<MarketDataHealth> = realDataProvider.health
 
     init {
@@ -301,7 +351,7 @@ class ForexRepository(
         return null
     }
 
-    private val marketDataService = ForexMarketRepositoryService()
+    private val marketDataService = ForexMarketRepositoryService(apiKey = fcsApiKeyProvider() ?: "")
 
     /**
      * Pushes a freshly validated candle series (from any source) into the live cache and
@@ -383,8 +433,8 @@ class ForexRepository(
         userQuestion: String? = null,
         quantitativeContext: String = ""
     ): String? {
-        val apiKey = com.example.BuildConfig.OPENROUTER_API_KEY
-        if (apiKey.isBlank() || apiKey == "YOUR_OPENROUTER_API_KEY") {
+        val apiKey = openRouterApiKeyProvider()
+        if (apiKey.isNullOrBlank()) {
             return null
         }
 

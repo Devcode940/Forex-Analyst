@@ -9,6 +9,7 @@ import androidx.credentials.exceptions.GetCredentialException
 import com.example.forex.data.db.ForexDao
 import com.example.forex.data.db.UserProfileEntity
 import com.example.forex.data.model.UserProfile
+import com.example.forex.data.security.PasswordHasher
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.FirebaseApp
@@ -20,7 +21,6 @@ import com.google.firebase.auth.UserProfileChangeRequest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
-import java.security.MessageDigest
 import java.util.UUID
 
 class ForexAuthManager(
@@ -65,9 +65,33 @@ class ForexAuthManager(
         }
     }
 
-    private fun hashPassword(password: String): String {
-        val bytes = MessageDigest.getInstance("SHA-256").digest(password.toByteArray())
-        return bytes.joinToString("") { "%02x".format(it) }
+    private fun hashPassword(password: String): String = PasswordHasher.hash(password)
+
+    /**
+     * Verifies a password against the stored hash. Supports the modern PBKDF2 format
+     * ("iterations:salt:hash") and legacy unsalted SHA-256 hex hashes for backward
+     * compatibility. A null/blank stored hash NEVER authenticates (fixes auth bypass).
+     * Returns true if the stored hash was legacy and should be upgraded on next write.
+     */
+    private fun verifyPasswordWithUpgradeCheck(password: String, storedHash: String?): Pair<Boolean, Boolean> {
+        if (storedHash.isNullOrBlank()) {
+            // No usable local credential: deny unless Firebase already verified the
+            // password (handled by caller). This closes the "null hash = free login" hole.
+            return Pair(false, false)
+        }
+        // Modern PBKDF2 format?
+        if (storedHash.split(":").size == 3) {
+            return Pair(PasswordHasher.verify(password, storedHash), false)
+        }
+        // Legacy unsalted SHA-256 hex (64 chars) — verify and flag for upgrade.
+        val legacyMatch = try {
+            val bytes = java.security.MessageDigest.getInstance("SHA-256").digest(password.toByteArray())
+            val hex = bytes.joinToString("") { "%02x".format(it) }
+            hex.equals(storedHash, ignoreCase = true)
+        } catch (_: Exception) {
+            false
+        }
+        return Pair(legacyMatch, legacyMatch)
     }
 
     suspend fun signUpWithEmail(email: String, password: String, displayName: String): AuthResultWrapper {
@@ -189,9 +213,14 @@ class ForexAuthManager(
         // Fallback to local secure user store
         val localUser = forexDao.getUserByEmail(cleanEmail)
         if (localUser != null) {
-            val inputHash = hashPassword(password)
-            if (localUser.passwordHash == inputHash || localUser.passwordHash == null) {
+            val (passwordMatches, wasLegacyHash) = verifyPasswordWithUpgradeCheck(password, localUser.passwordHash)
+            if (passwordMatches || firebaseSuccess) {
                 forexDao.logoutAllUsers()
+                // Upgrade legacy SHA-256 hashes (or backfill missing hashes for
+                // Firebase/Google accounts verified via Firebase) to PBKDF2.
+                if (localUser.passwordHash.isNullOrBlank() || wasLegacyHash) {
+                    forexDao.insertOrUpdateUser(localUser.copy(passwordHash = hashPassword(password)))
+                }
                 forexDao.setActiveUser(localUser.uid)
                 return AuthResultWrapper(
                     success = true,

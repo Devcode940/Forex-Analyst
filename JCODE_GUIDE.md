@@ -107,9 +107,9 @@ adb install -r /workspace/forex-analyst/app/build/outputs/apk/debug/app-debug.ap
 > The `-r` flag allows reinstalling over an existing version while preserving app data and Room database state.
 
 ### Step 3: Launch the Main Activity
-The app's package is `com.devcode.forex` and entry activity is `com.example.MainActivity`:
+The app's package is `com.devcode.forexapp` and entry activity is `com.example.MainActivity`:
 ```bash
-adb shell am start -n com.devcode.forex/com.example.MainActivity
+adb shell am start -n com.devcode.forexapp/com.example.MainActivity
 ```
 
 ### ⚡ All-in-One Shortcut (Build, Deploy & Launch)
@@ -118,7 +118,7 @@ Run this single command from the project root:
 cd /workspace/forex-analyst && \
   ./gradlew assembleDebug && \
   adb install -r app/build/outputs/apk/debug/app-debug.apk && \
-  adb shell am start -n com.devcode.forex/com.example.MainActivity
+  adb shell am start -n com.devcode.forexapp/com.example.MainActivity
 ```
 
 ### Step 4: Inspect Live Logs (Logcat)
@@ -177,4 +177,4 @@ git push origin main
 | `SDK build-tools 36.0.0 missing / downloading` | Missing explicit `buildToolsVersion` | Ensure `buildToolsVersion = "37.0.0"` is present inside `android { ... }` in `app/build.gradle.kts` |
 | `remote: Permission to Devcode940/Forex-Analyst.git denied (403)` | Outdated or mismatched Git credentials | Use your GitHub PAT as demonstrated in Section 5 |
 | `adb: no devices/emulators found` | adb server hung or restart required | Run `adb kill-server && adb devices` |
-| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | Existing APK signed with different keystore | Uninstall first: `adb uninstall com.devcode.forex` then reinstall |
+| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | Existing APK signed with different keystore | Uninstall first: `adb uninstall com.devcode.forexapp` then reinstall |
