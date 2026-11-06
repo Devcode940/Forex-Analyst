@@ -15,7 +15,7 @@ android {
   buildToolsVersion = "37.0.0"
 
   defaultConfig {
-    applicationId = "com.devcode.forex"
+    applicationId = "com.devcode.forexapp"
     minSdk = 24
     targetSdk = 36
     versionCode = 1
