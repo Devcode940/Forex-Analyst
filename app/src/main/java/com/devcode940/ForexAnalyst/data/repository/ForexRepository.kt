@@ -743,6 +743,77 @@ class ForexRepository(
     val customAlerts: Flow<List<AlertEntity>> = forexDao.getAllAlerts()
     val watchlist: Flow<List<WatchlistEntity>> = forexDao.getWatchlist()
 
+    // ========================================================================
+    // PAGINATION SUPPORT
+    // ========================================================================
+
+    /**
+     * Get saved signals with pagination.
+     * 
+     * @param page Page number (0-based)
+     * @param pageSize Number of items per page
+     * @return Paginated result with signals
+     */
+    suspend fun getSavedSignalsPaginated(page: Int = 0, pageSize: Int = 20): com.devcode940.ForexAnalyst.data.utils.PaginatedResult<SignalEntity> {
+        val offset = page * pageSize
+        val items = forexDao.getSavedSignalsPaginated(offset, pageSize)
+        val totalCount = forexDao.countSavedSignals()
+        
+        return com.devcode940.ForexAnalyst.data.utils.paginatedResultOf(
+            items = items,
+            page = page,
+            pageSize = pageSize,
+            totalCount = totalCount
+        )
+    }
+
+    /**
+     * Get custom alerts with pagination.
+     * 
+     * @param page Page number (0-based)
+     * @param pageSize Number of items per page
+     * @return Paginated result with alerts
+     */
+    suspend fun getAlertsPaginated(page: Int = 0, pageSize: Int = 20): com.devcode940.ForexAnalyst.data.utils.PaginatedResult<AlertEntity> {
+        val offset = page * pageSize
+        val items = forexDao.getAlertsPaginated(offset, pageSize)
+        val totalCount = forexDao.countAlerts()
+        
+        return com.devcode940.ForexAnalyst.data.utils.paginatedResultOf(
+            items = items,
+            page = page,
+            pageSize = pageSize,
+            totalCount = totalCount
+        )
+    }
+
+    /**
+     * Get historical candles with pagination.
+     * 
+     * @param symbol The currency pair symbol
+     * @param timeframe The timeframe
+     * @param page Page number (0-based)
+     * @param pageSize Number of items per page
+     * @return Paginated result with candles
+     */
+    suspend fun getCandlesPaginated(
+        symbol: String,
+        timeframe: String,
+        page: Int = 0,
+        pageSize: Int = 100
+    ): com.devcode940.ForexAnalyst.data.utils.PaginatedResult<CandleEntity> {
+        val offset = page * pageSize
+        val items = forexDao.getCandlesPaginated(symbol, timeframe, offset, pageSize)
+        val totalCount = forexDao.countCandles(symbol, timeframe)
+        
+        return com.devcode940.ForexAnalyst.data.utils.paginatedResultOf(
+            items = items,
+            page = page,
+            pageSize = pageSize,
+            totalCount = totalCount
+        )
+    }
+
     suspend fun saveSignal(signal: TradeSignal) {
         try {
             forexDao.insertSignal(signal.toEntity())

@@ -5,6 +5,66 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ForexDao {
+    // ========================================================================
+    // PAGINATED QUERIES
+    // ========================================================================
+
+    /**
+     * Get saved signals with pagination.
+     * 
+     * @param offset Starting index
+     * @param limit Maximum number of items to return
+     */
+    @Query("SELECT * FROM saved_signals ORDER BY timestamp DESC LIMIT :limit OFFSET :offset")
+    suspend fun getSavedSignalsPaginated(offset: Int, limit: Int): List<SignalEntity>
+
+    /**
+     * Count all saved signals.
+     */
+    @Query("SELECT COUNT(*) FROM saved_signals")
+    suspend fun countSavedSignals(): Int
+
+    /**
+     * Get custom alerts with pagination.
+     * 
+     * @param offset Starting index
+     * @param limit Maximum number of items to return
+     */
+    @Query("SELECT * FROM custom_alerts ORDER BY createdAt DESC LIMIT :limit OFFSET :offset")
+    suspend fun getAlertsPaginated(offset: Int, limit: Int): List<AlertEntity>
+
+    /**
+     * Count all custom alerts.
+     */
+    @Query("SELECT COUNT(*) FROM custom_alerts")
+    suspend fun countAlerts(): Int
+
+    /**
+     * Get historical candles with pagination.
+     * 
+     * @param symbol The currency pair symbol
+     * @param timeframe The timeframe
+     * @param offset Starting index
+     * @param limit Maximum number of items to return
+     */
+    @Query("SELECT * FROM historical_candles WHERE symbol = :symbol AND timeframe = :timeframe ORDER BY timestamp ASC LIMIT :limit OFFSET :offset")
+    suspend fun getCandlesPaginated(
+        symbol: String,
+        timeframe: String,
+        offset: Int,
+        limit: Int
+    ): List<CandleEntity>
+
+    /**
+     * Count historical candles for a specific symbol and timeframe.
+     */
+    @Query("SELECT COUNT(*) FROM historical_candles WHERE symbol = :symbol AND timeframe = :timeframe")
+    suspend fun countCandles(symbol: String, timeframe: String): Int
+
+    // ========================================================================
+    // EXISTING QUERIES
+    // ========================================================================
+
     // Saved Signals
     @Query("SELECT * FROM saved_signals ORDER BY timestamp DESC")
     fun getAllSavedSignals(): Flow<List<SignalEntity>>

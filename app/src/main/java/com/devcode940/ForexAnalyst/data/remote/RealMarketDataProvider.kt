@@ -5,6 +5,8 @@ import com.devcode940.ForexAnalyst.data.model.CandleStick
 import com.devcode940.ForexAnalyst.data.model.MarketTick
 import com.devcode940.ForexAnalyst.data.model.PairCatalog
 import com.devcode940.ForexAnalyst.data.model.Timeframe
+import com.devcode940.ForexAnalyst.data.network.RetryConfig
+import com.devcode940.ForexAnalyst.data.network.withRetry
 import com.devcode940.ForexAnalyst.data.validation.MarketDataValidator
 import com.devcode940.ForexAnalyst.data.validation.ValidationReport
 import com.squareup.moshi.Json
@@ -648,24 +650,41 @@ class RealMarketDataProvider(
             params["apikey"] = apiKey
             if (csvResponse) params["datatype"] = "csv"
             
-            try {
-                val response: Response<okhttp3.ResponseBody> = service.query(params)
-                val raw = (response.body()?.string() ?: response.errorBody()?.string()) ?: ""
-                
-                lastRequestAt = clock()
-                requestsToday++
-                updateRequestGauge()
-                
-                return classifyAndExtract(raw, response.code(), allowJsonPayload = !csvResponse)
-                
-            } catch (e: IOException) {
-                lastRequestAt = clock()
-                updateRequestGauge()
-                throw MarketDataException.Network(e)
-            } catch (e: Exception) {
-                lastRequestAt = clock()
-                updateRequestGauge()
-                throw MarketDataException.Network(e)
+            // Execute with retry logic for network errors
+            val retryConfig = RetryConfig(
+                maxRetries = 3,
+                initialDelayMs = 1000L,
+                maxDelayMs = 10000L,
+                backoffMultiplier = 2.0,
+                jitterFactor = 0.2,
+                shouldRetry = { error -> 
+                    // Only retry on network errors, not on rate limits or quota issues
+                    error is com.devcode940.ForexAnalyst.data.network.NetworkError.NoNetwork ||
+                    error is com.devcode940.ForexAnalyst.data.network.NetworkError.Timeout ||
+                    error is com.devcode940.ForexAnalyst.data.network.NetworkError.ServerUnreachable
+                }
+            )
+            
+            return withRetry(retryConfig) {
+                try {
+                    val response: Response<okhttp3.ResponseBody> = service.query(params)
+                    val raw = (response.body()?.string() ?: response.errorBody()?.string()) ?: ""
+                    
+                    lastRequestAt = clock()
+                    requestsToday++
+                    updateRequestGauge()
+                    
+                    classifyAndExtract(raw, response.code(), allowJsonPayload = !csvResponse)
+                    
+                } catch (e: IOException) {
+                    lastRequestAt = clock()
+                    updateRequestGauge()
+                    throw MarketDataException.Network(e)
+                } catch (e: Exception) {
+                    lastRequestAt = clock()
+                    updateRequestGauge()
+                    throw MarketDataException.Network(e)
+                }
             }
         }
     }

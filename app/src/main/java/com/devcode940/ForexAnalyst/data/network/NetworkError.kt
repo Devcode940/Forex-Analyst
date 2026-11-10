@@ -275,27 +275,178 @@ suspend fun <T> networkCall(block: suspend () -> T): NetworkResult<T> {
 }
 
 /**
- * Extension function to retry a network operation with exponential backoff.
+ * Configuration for retry logic with exponential backoff.
+ */
+data class RetryConfig(
+    val maxRetries: Int = 3,
+    val initialDelayMs: Long = 1000L,
+    val maxDelayMs: Long = 30000L,
+    val backoffMultiplier: Double = 2.0,
+    val jitterFactor: Double = 0.1,
+    val shouldRetry: (NetworkError) -> Boolean = { it.isRetryable }
+) {
+    companion object {
+        /**
+         * Default retry configuration with exponential backoff.
+         */
+        val DEFAULT = RetryConfig()
+
+        /**
+         * Fast retry configuration for quick operations.
+         */
+        val FAST = RetryConfig(
+            maxRetries = 2,
+            initialDelayMs = 500L,
+            maxDelayMs = 5000L
+        )
+
+        /**
+         * Slow retry configuration for slow/rate-limited APIs.
+         */
+        val SLOW = RetryConfig(
+            maxRetries = 5,
+            initialDelayMs = 2000L,
+            maxDelayMs = 60000L,
+            backoffMultiplier = 1.5
+        )
+
+        /**
+         * No retry configuration.
+         */
+        val NONE = RetryConfig(maxRetries = 0)
+    }
+}
+
+/**
+ * Calculate delay with exponential backoff and jitter.
+ * 
+ * @param attempt The current attempt number (0-based)
+ * @param config The retry configuration
+ * @return The delay in milliseconds
+ */
+fun calculateBackoffDelay(attempt: Int, config: RetryConfig): Long {
+    val exponentialDelay = config.initialDelayMs * (config.backoffMultiplier.pow(attempt)).toLong()
+    val cappedDelay = minOf(exponentialDelay, config.maxDelayMs)
+    
+    // Add jitter to prevent thundering herd
+    val jitter = (Math.random() * 2 - 1) * cappedDelay * config.jitterFactor
+    
+    return maxOf(cappedDelay + jitter.toLong(), 0L)
+}
+
+/**
+ * Execute a network operation with retry logic and exponential backoff.
+ * 
+ * @param config The retry configuration
+ * @param operation The suspend operation to execute
+ * @return NetworkResult with the result or final error
+ */
+suspend fun <T> withRetry(
+    config: RetryConfig = RetryConfig.DEFAULT,
+    operation: suspend () -> T
+): NetworkResult<T> {
+    var lastError: NetworkError? = null
+    
+    repeat(config.maxRetries + 1) { attempt ->
+        try {
+            val result = operation()
+            return NetworkResult.Success(result)
+        } catch (e: Exception) {
+            lastError = NetworkError.fromException(e)
+            
+            // Don't retry if we shouldn't or if this is the last attempt
+            if (attempt >= config.maxRetries || !config.shouldRetry(lastError!!)) {
+                break
+            }
+            
+            // Wait with exponential backoff
+            val delay = calculateBackoffDelay(attempt, config)
+            kotlinx.coroutines.delay(delay)
+        }
+    }
+    
+    return NetworkResult.Error(lastError ?: NetworkError.Unknown())
+}
+
+/**
+ * Execute a network operation with retry logic and progress callback.
+ * 
+ * @param config The retry configuration
+ * @param onRetry Callback when a retry is attempted (attempt number, error, delay)
+ * @param operation The suspend operation to execute
+ * @return NetworkResult with the result or final error
+ */
+suspend fun <T> withRetry(
+    config: RetryConfig = RetryConfig.DEFAULT,
+    onRetry: suspend (attempt: Int, error: NetworkError, delayMs: Long) -> Unit = { _, _, _ -> },
+    operation: suspend () -> T
+): NetworkResult<T> {
+    var lastError: NetworkError? = null
+    
+    repeat(config.maxRetries + 1) { attempt ->
+        try {
+            val result = operation()
+            return NetworkResult.Success(result)
+        } catch (e: Exception) {
+            lastError = NetworkError.fromException(e)
+            
+            // Don't retry if we shouldn't or if this is the last attempt
+            if (attempt >= config.maxRetries || !config.shouldRetry(lastError!!)) {
+                break
+            }
+            
+            // Calculate delay
+            val delay = calculateBackoffDelay(attempt, config)
+            
+            // Call retry callback
+            onRetry(attempt + 1, lastError!!, delay)
+            
+            // Wait with exponential backoff
+            kotlinx.coroutines.delay(delay)
+        }
+    }
+    
+    return NetworkResult.Error(lastError ?: NetworkError.Unknown())
+}
+
+/**
+ * Retry a NetworkResult with exponential backoff.
+ * This version takes the original operation as a lambda.
  */
 suspend fun <T> NetworkResult<T>.retry(
-    maxRetries: Int = 3,
-    delayMs: Long = 1000L,
-    shouldRetry: (NetworkError) -> Boolean = { it.isRetryable }
+    config: RetryConfig = RetryConfig.DEFAULT,
+    operation: suspend () -> T
 ): NetworkResult<T> {
-    if (this !is NetworkResult.Error || !shouldRetry(error) || maxRetries <= 0) {
-        return this
+    return when (this) {
+        is NetworkResult.Success -> this
+        is NetworkResult.Loading -> this
+        is NetworkResult.Error -> {
+            if (!config.shouldRetry(error) || config.maxRetries <= 0) {
+                return this
+            }
+            
+            withRetry(config) { operation() }
+        }
     }
+}
 
-    var currentRetry = 0
-    var currentResult: NetworkResult<T> = this
-
-    while (currentRetry < maxRetries && currentResult is NetworkResult.Error && shouldRetry(currentResult.error)) {
-        currentRetry++
-        kotlinx.coroutines.delay(delayMs * currentRetry)
-        // For retry, we would need the original operation, so this is a simplified version
-        // In practice, you'd call the original suspend function again
-        break
+/**
+ * Retry a NetworkResult with progress callback.
+ */
+suspend fun <T> NetworkResult<T>.retry(
+    config: RetryConfig = RetryConfig.DEFAULT,
+    onRetry: suspend (attempt: Int, error: NetworkError, delayMs: Long) -> Unit,
+    operation: suspend () -> T
+): NetworkResult<T> {
+    return when (this) {
+        is NetworkResult.Success -> this
+        is NetworkResult.Loading -> this
+        is NetworkResult.Error -> {
+            if (!config.shouldRetry(error) || config.maxRetries <= 0) {
+                return this
+            }
+            
+            withRetry(config, onRetry) { operation() }
+        }
     }
-
-    return currentResult
 }
