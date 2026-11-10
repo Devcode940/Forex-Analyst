@@ -10,12 +10,12 @@ plugins {
 }
 
 android {
-  namespace = "com.example"
+  namespace = "com.devcode.ForexAnalyst"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
   buildToolsVersion = "37.0.0"
 
   defaultConfig {
-    applicationId = "com.devcode.forexapp"
+    applicationId = "com.devcode.ForexAnalyst"
     minSdk = 24
     targetSdk = 36
     versionCode = 1

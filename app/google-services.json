@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "154992800406",
+    "project_id": "forexanalyst-99ff5",
+    "storage_bucket": "forexanalyst-99ff5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:154992800406:android:847f286c693933652548b7",
+        "android_client_info": {
+          "package_name": "com.devcode.ForexAnalyst"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "154992800406-6thfpklaqo0ittf4fnrf70eaje13bc34.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAkNRgBVGNAGAckNICFzliaomDt8oUiQPg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "154992800406-6thfpklaqo0ittf4fnrf70eaje13bc34.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

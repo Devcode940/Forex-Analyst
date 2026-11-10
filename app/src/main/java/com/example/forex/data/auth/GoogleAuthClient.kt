@@ -28,9 +28,9 @@ class GoogleAuthClient(private val context: Context) {
             } catch (e2: Exception) {
                 try {
                     val options = FirebaseOptions.Builder()
-                        .setApplicationId("1:1234567890:android:abcdef1234567890")
-                        .setApiKey("dummy_api_key_for_firebase")
-                        .setProjectId("dummy-project")
+                        .setApplicationId("1:154992800406:android:847f286c693933652548b7")
+                        .setApiKey("AIzaSyAkNRgBVGNAGAckNICFzliaomDt8oUiQPg")
+                        .setProjectId("forexanalyst-99ff5")
                         .build()
                     FirebaseApp.initializeApp(context, options)
                     FirebaseAuth.getInstance()
