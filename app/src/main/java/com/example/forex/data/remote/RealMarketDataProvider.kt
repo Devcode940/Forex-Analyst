@@ -242,6 +242,26 @@ class RealMarketDataProvider(
             return MarketTick(displaySymbol, price, bid, ask, 0.0, timestamp)
         }
 
+        /** Parses CURRENCY_EXCHANGE_RATE CSV response with bid/ask. */
+        fun parseQuoteCsv(displaySymbol: String, csv: String): MarketTick? {
+            val lines = csv.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toList()
+            if (lines.isEmpty()) return null
+            val headers = lines[0].split(',').map { it.trim().removeSurrounding("\"").lowercase(Locale.US) }
+            fun indexOfAny(vararg names: String): Int = headers.indexOfFirst { name -> names.any { n -> it == n.lowercase(Locale.US) } }
+            val idxRate = indexOfAny("exchange_rate", "rate", "price")
+            val idxBid = indexOfAny("bid_price", "bid")
+            val idxAsk = indexOfAny("ask_price", "ask")
+            val idxTime = indexOfAny("last_refreshed", "time", "date", "timestamp")
+            if (idxRate < 0) return null
+            val dataRow = lines.getOrNull(1) ?: return null
+            val row = dataRow.split(',')
+            val price = row.getOrNull(idxRate)?.toDoubleOrNull()?.takeIf { it.isFinite() && it > 0 } ?: return null
+            val bid = row.getOrNull(idxBid)?.toDoubleOrNull()?.takeIf { it.isFinite() && it > 0 } ?: price
+            val ask = row.getOrNull(idxAsk)?.toDoubleOrNull()?.takeIf { it.isFinite() && it > 0 } ?: price
+            val timestamp = row.getOrNull(idxTime)?.let { resolveEpochOrDate(it) } ?: System.currentTimeMillis()
+            return MarketTick(displaySymbol, price, bid, ask, 0.0, timestamp)
+        }
+
         fun aggregateToBucket(candles: List<CandleStick>, bucketMillis: Long): List<CandleStick> {
             if (candles.isEmpty() || bucketMillis <= 0) return candles
             val out = ArrayList<CandleStick>()
