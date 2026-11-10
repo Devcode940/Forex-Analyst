@@ -1,9 +1,13 @@
 package com.devcode940.ForexAnalyst.data.model
 
+import androidx.compose.runtime.Stable
+
+@Stable
 enum class PairCategory(val label: String) {
     MAJOR("Major"), MINOR("Minor"), EXOTIC("Exotic"), METALS_CRYPTO("Metals & Crypto")
 }
 
+@Stable
 data class CurrencyPair(
     val symbol: String, // e.g., "EUR/USD"
     val name: String, // e.g., "Euro / US Dollar"
@@ -18,6 +22,7 @@ data class CurrencyPair(
     val isFavorite: Boolean = false
 )
 
+@Stable
 enum class Timeframe(val label: String, val minutes: Int) {
     M1("1M", 1),
     M5("5M", 5),
@@ -27,10 +32,12 @@ enum class Timeframe(val label: String, val minutes: Int) {
     D1("1D", 1440)
 }
 
+@Stable
 enum class ChartStyle {
     CANDLESTICK, LINE, HEIKIN_ASHI
 }
 
+@Stable
 data class CandleStick(
     val timestamp: Long,
     val open: Double,
@@ -41,6 +48,7 @@ data class CandleStick(
     val isBullish: Boolean = close >= open
 )
 
+@Stable
 enum class PatternType(val title: String, val isBullish: Boolean, val description: String) {
     BULLISH_ENGULFING("Bullish Engulfing", true, "Strong buyers reversal pattern after downtrend"),
     BEARISH_ENGULFING("Bearish Engulfing", false, "Strong sellers reversal pattern after uptrend"),
@@ -59,6 +67,7 @@ enum class PatternType(val title: String, val isBullish: Boolean, val descriptio
     BREAKOUT_BEARISH("Bearish Breakout", false, "Price closed below key support zone with high volume")
 }
 
+@Stable
 data class DetectedPattern(
     val patternType: PatternType,
     val candleIndex: Int,
@@ -69,6 +78,7 @@ data class DetectedPattern(
     val invalidationLevel: Double? = null
 )
 
+@Stable
 enum class SignalType(val title: String) {
     BUY("STRONG BUY"),
     SELL("STRONG SELL"),
@@ -79,6 +89,7 @@ enum class SignalType(val title: String) {
  * Volatility regime derived from the ATR distribution of the analyzed series.
  * Drives adaptive stop sizing in [com.example.forex.data.repository.TechnicalAnalysisEngine].
  */
+@Stable
 enum class VolatilityRegime(val label: String, val atrStopMultiplier: Double) {
     COMPRESSED("Compressed / Squeeze", 1.2),
     NORMAL("Normal", 1.5),
@@ -91,6 +102,7 @@ enum class VolatilityRegime(val label: String, val atrStopMultiplier: Double) {
  * Stop distance is expressed as an ATR multiple; lot size solves for the
  * requested account risk given that stop distance and contract size.
  */
+@Stable
 data class PositionSizing(
     val atrValue: Double,          // ATR in price units
     val atrPips: Double,           // ATR normalized to the pair's pip size
@@ -106,6 +118,7 @@ data class PositionSizing(
     val note: String = ""
 )
 
+@Stable
 data class TradeSignal(
     val id: String,
     val pairSymbol: String,
@@ -135,6 +148,7 @@ data class TradeSignal(
     val takeProfit: Double get() = takeProfit1
 }
 
+@Stable
 enum class AlertCondition(val title: String) {
     PRICE_ABOVE("Price Rises Above"),
     PRICE_BELOW("Price Drops Below"),
@@ -144,6 +158,7 @@ enum class AlertCondition(val title: String) {
     MA_BEARISH_CROSS("EMA 20/50 Bearish Cross")
 }
 
+@Stable
 data class CustomAlert(
     val id: String,
     val pairSymbol: String,
@@ -155,12 +170,14 @@ data class CustomAlert(
     val createdAt: Long = System.currentTimeMillis()
 )
 
+@Stable
 data class MacdData(
     val macdLine: List<Double?>,
     val signalLine: List<Double?>,
     val histogram: List<Double?>
 )
 
+@Stable
 data class UserProfile(
     val uid: String,
     val email: String,
@@ -171,6 +188,7 @@ data class UserProfile(
     val accountTier: String = "Pro Trader"
 )
 
+@Stable
 data class IndicatorSettings(
     // Visibility Toggles
     val showSma20: Boolean = false,
@@ -211,6 +229,7 @@ data class IndicatorSettings(
     val bollingerStdDev: Double = 2.0
 )
 
+@Stable
 enum class WebSocketStatus(val label: String) {
     CONNECTING("Connecting..."),
     CONNECTED("Live WS Connected"),
@@ -219,10 +238,12 @@ enum class WebSocketStatus(val label: String) {
     ERROR("Connection Error")
 }
 
+@Stable
 enum class PriceDirection {
     UP, DOWN, NEUTRAL
 }
 
+@Stable
 data class MarketTick(
     val symbol: String,
     val price: Double,
@@ -233,6 +254,7 @@ data class MarketTick(
     val priceChangeDirection: PriceDirection = PriceDirection.NEUTRAL
 )
 
+@Stable
 data class WebSocketStats(
     val status: WebSocketStatus,
     val latencyMs: Long,
@@ -242,14 +264,16 @@ data class WebSocketStats(
     val messageRatePerSec: Double
 )
 
+@Stable
 enum class AiZoneType(val title: String) {
     DEMAND_SUPPORT("Demand / Key Support"),
     SUPPLY_RESISTANCE("Supply / Key Resistance"),
     BREAKOUT_ZONE("Breakout Threshold Zone")
 }
 
+@Stable
 data class AiZone(
-    val id: String = java.util.UUID.randomUUID().toString(),
+    val id: String = (java.util.UUID.randomUUID().toString()),
     val type: AiZoneType,
     val priceTop: Double,
     val priceBottom: Double,
@@ -258,6 +282,7 @@ data class AiZone(
     val confidence: Int = 90
 )
 
+@Stable
 enum class AiTrendlineType(val title: String) {
     BULLISH_SUPPORT("Bullish Dynamic Support"),
     BEARISH_RESISTANCE("Bearish Dynamic Resistance"),
@@ -266,8 +291,9 @@ enum class AiTrendlineType(val title: String) {
     BREAKOUT_VECTOR("Breakout Vector")
 }
 
+@Stable
 data class AiTrendline(
-    val id: String = java.util.UUID.randomUUID().toString(),
+    val id: String = (java.util.UUID.randomUUID().toString()),
     val type: AiTrendlineType,
     val candleIndex1: Int,
     val price1: Double,
@@ -277,8 +303,9 @@ data class AiTrendline(
     val isDashed: Boolean = false
 )
 
+@Stable
 data class AiTargetProjection(
-    val id: String = java.util.UUID.randomUUID().toString(),
+    val id: String = (java.util.UUID.randomUUID().toString()),
     val entryPrice: Double,
     val stopLoss: Double,
     val takeProfit1: Double,
@@ -288,6 +315,7 @@ data class AiTargetProjection(
     val rationale: String
 )
 
+@Stable
 data class AiFibonacciLevel(
     val ratio: Double,
     val percentage: String,
@@ -295,6 +323,7 @@ data class AiFibonacciLevel(
     val description: String
 )
 
+@Stable
 data class AiChartOverlayState(
     val pairSymbol: String,
     val timeframe: Timeframe,
@@ -311,12 +340,14 @@ data class AiChartOverlayState(
     val redrawStep: String = ""
 )
 
+@Stable
 enum class AiChatSender {
     USER, AI, SYSTEM
 }
 
+@Stable
 data class AiChatMessage(
-    val id: String = java.util.UUID.randomUUID().toString(),
+    val id: String = (java.util.UUID.randomUUID().toString()),
     val sender: AiChatSender,
     val text: String,
     val timestamp: Long = System.currentTimeMillis(),
@@ -330,14 +361,16 @@ data class AiChatMessage(
 }
 
 // --- Economic Calendar Models ---
+@Stable
 enum class ImpactLevel(val label: String, val colorHex: Long) {
     HIGH("HIGH", 0xFFEF4444),
     MEDIUM("MEDIUM", 0xFFF59E0B),
     LOW("LOW", 0xFF10B981)
 }
 
+@Stable
 data class EconomicEvent(
-    val id: String = java.util.UUID.randomUUID().toString(),
+    val id: String = (java.util.UUID.randomUUID().toString()),
     val title: String,
     val currency: String, // e.g. "USD", "EUR", "GBP", "JPY", "AUD", "CAD"
     val time: String, // e.g. "14:30 GMT"
@@ -351,6 +384,7 @@ data class EconomicEvent(
 )
 
 // --- Volume Profile & Order Block Models ---
+@Stable
 data class VolumeBucket(
     val minPrice: Double,
     val maxPrice: Double,
@@ -362,6 +396,7 @@ data class VolumeBucket(
     val isVal: Boolean = false
 )
 
+@Stable
 data class VolumeProfile(
     val buckets: List<VolumeBucket>,
     val pocPrice: Double,
@@ -370,6 +405,7 @@ data class VolumeProfile(
     val totalVolume: Double
 )
 
+@Stable
 data class OrderBlock(
     val isBullish: Boolean,
     val topPrice: Double,
@@ -380,6 +416,7 @@ data class OrderBlock(
 )
 
 // --- Strategy Backtester Models ---
+@Stable
 enum class BacktestStrategy(
     val title: String,
     val description: String,
@@ -393,6 +430,7 @@ enum class BacktestStrategy(
     SMART_MONEY_CONFLUENCE("Smart Money Confluence System", "Combines Support/Resistance bounce + RSI filter + EMA Trend", 25.0, 75.0)
 }
 
+@Stable
 data class BacktestTrade(
     val tradeNumber: Int,
     val isLong: Boolean,
@@ -409,6 +447,7 @@ data class BacktestTrade(
     val runningBalance: Double
 )
 
+@Stable
 data class BacktestResult(
     val strategy: BacktestStrategy,
     val pairSymbol: String,

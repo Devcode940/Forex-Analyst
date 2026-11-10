@@ -1,8 +1,10 @@
 package com.devcode940.ForexAnalyst.data.db
 
+import androidx.compose.runtime.Stable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+@Stable
 @Entity(tableName = "saved_signals")
 data class SignalEntity(
     @PrimaryKey val id: String,
@@ -27,9 +29,10 @@ data class SignalEntity(
     val dataSource: String = "SIMULATION"
 )
 
+@Stable
 @Entity(tableName = "custom_alerts")
 data class AlertEntity(
-    @PrimaryKey val id: String,
+    @PrimaryKey val id: AlertId,
     val pairSymbol: String,
     val conditionType: String,
     val targetValue: Double,
@@ -39,6 +42,7 @@ data class AlertEntity(
     val createdAt: Long
 )
 
+@Stable
 @Entity(tableName = "watchlist_items")
 data class WatchlistEntity(
     @PrimaryKey val symbol: String,
@@ -60,6 +64,7 @@ data class CandleEntity(
     val volume: Double
 )
 
+@Stable
 @Entity(tableName = "user_profiles")
 data class UserProfileEntity(
     @PrimaryKey val uid: String,
@@ -72,6 +77,7 @@ data class UserProfileEntity(
     val isLoggedIn: Boolean = true
 )
 
+@Stable
 @Entity(tableName = "user_settings")
 data class UserSettingsEntity(
     @PrimaryKey val id: String = "current_settings",
