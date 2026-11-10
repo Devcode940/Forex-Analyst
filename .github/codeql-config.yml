@@ -1,0 +1,56 @@
+# CodeQL configuration for Forex-Analyst project
+# This file customizes the CodeQL analysis to reduce false positives
+# and focus on real security issues.
+
+# Paths to analyze (default: entire repository)
+paths:
+  - app/src/main/java
+  - app/src/test/java
+
+# Paths to ignore
+paths-ignore:
+  - app/build
+  - app/src/androidTest
+  - '.gradle'
+  - 'build'
+  - '.git'
+  - '.github/workflows'
+
+# Query suites to run
+# We use security-and-quality for comprehensive analysis
+queries:
+  - uses: security-and-quality
+
+# Customize query behavior
+query-filters:
+  # Ignore test code for certain queries
+  - exclude:
+      path: app/src/test
+      kind: problem
+
+# Disable specific queries that generate false positives
+# Note: These should be addressed in the code, not ignored permanently
+# disable:
+#   - id: kotlin/hardcoded-credentials
+#     reason: "Firebase keys are loaded from google-services.json, not hardcoded"
+
+# Enable experimental queries
+# experimental: true
+
+# Packs to use (default: codeql/kotlin-all)
+# packs:
+#   - codeql/kotlin-all
+#   - codeql/java-all
+
+# Database creation options
+database:
+  # Use autobuild for Android projects
+  build-command: "./gradlew assembleDebug"
+  
+# Analysis options
+analysis:
+  # Fail the build if warnings are found
+  # fail-on-warning: true
+  
+  # Treat warnings as errors
+  # warnings-as-errors: true
