@@ -3,6 +3,7 @@ package com.devcode940.ForexAnalyst.data.db
 import androidx.compose.runtime.Stable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.devcode940.ForexAnalyst.data.model.AlertId
 
 @Stable
 @Entity(tableName = "saved_signals")
