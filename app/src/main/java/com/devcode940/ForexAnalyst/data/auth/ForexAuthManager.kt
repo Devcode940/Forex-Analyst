@@ -45,11 +45,13 @@ class ForexAuthManager(
     companion object {
         private const val TAG = "ForexAuthManager"
         
-        // Firebase configuration for forexanalyst-99ff5 project
+        // Firebase configuration - loaded from google-services.json via FirebaseApp
+        // These values should NOT be hardcoded in production code
+        // They are loaded automatically by Firebase initialization
         private const val FIREBASE_PROJECT_ID = "forexanalyst-99ff5"
-        private const val FIREBASE_APP_ID = "1:154992800406:android:847f286c693933652548b7"
-        private const val FIREBASE_API_KEY = "AIzaSyAkNRgBVGNAGAckNICFzliaomDt8oUiQPg"
-        private const val FIREBASE_WEB_CLIENT_ID = "154992800406-6thfpklaqo0ittf4fnrf70eaje13bc34.apps.googleusercontent.com"
+        
+        // Note: API keys and client IDs are loaded from google-services.json
+        // Do NOT hardcode them in source files as they can be extracted from APK
     }
     
     // ========================================================================
@@ -94,9 +96,6 @@ class ForexAuthManager(
     private fun initializeFirebaseManually(): FirebaseAuth {
         return try {
             val options = FirebaseOptions.Builder()
-                .setApplicationId(FIREBASE_APP_ID)
-                .setApiKey(FIREBASE_API_KEY)
-                .setProjectId(FIREBASE_PROJECT_ID)
                 .build()
             
             // Check if app is already initialized to avoid duplicate initialization
@@ -521,11 +520,11 @@ class ForexAuthManager(
                 context.getString(resId)
             } else {
                 // Fallback to the web client ID from Firebase configuration
-                FIREBASE_WEB_CLIENT_ID
+                getWebClientId()
             }
         } catch (e: Exception) {
             Log.w(TAG, "Failed to get web client ID from resources", e)
-            FIREBASE_WEB_CLIENT_ID
+            getWebClientId()
         }
     }
 
